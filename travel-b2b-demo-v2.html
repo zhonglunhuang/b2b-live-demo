@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TravelPro B2B 平台演示</title>
+<style>
+/* ============================================================
+   BASE RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #0f3460;
+  --navy-light: #16213e;
+  --red-accent: #e94560;
+  --green: #00b894;
+  --green-dark: #00a381;
+  --yellow: #fdcb6e;
+  --blue-mid: #1a4a8a;
+  --panel-bg: #1a2744;
+  --panel-card: #1f3058;
+  --border-color: rgba(255,255,255,0.08);
+  --text-primary: #e8edf5;
+  --text-secondary: #8fa3c8;
+  --text-muted: #5a7299;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --line-green: #06c755;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+  background: #0a1628;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+#header {
+  background: linear-gradient(135deg, var(--navy) 0%, #1a2f5e 100%);
+  border-bottom: 1px solid rgba(233,69,96,0.3);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  position: relative;
+  z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+#logo {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  color: #fff;
+}
+#logo span { color: var(--red-accent); }
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red-accent);
+  letter-spacing: 1px;
+}
+.live-dot {
+  width: 7px; height: 7px;
+  background: var(--red-accent);
+  border-radius: 50%;
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(1.4); }
+}
+
+/* Scenario Tabs */
+#scenario-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+.tab-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.tab-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--red-accent), #c0392b);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(233,69,96,0.5);
+}
+
+/* Header right controls */
+#header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#play-btn {
+  background: linear-gradient(135deg, #00b894, #00a381);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,184,148,0.4);
+}
+#play-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,184,148,0.6); }
+#play-btn:active { transform: translateY(0); }
+
+#clock {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  min-width: 65px;
+  text-align: right;
+}
+
+/* ============================================================
+   MAIN LAYOUT (3 columns)
+   ============================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#main-area {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ============================================================
+   FLOW LINES SVG (background layer)
+   ============================================================ */
+#flow-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.flow-line {
+  stroke: rgba(233,69,96,0.0);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  fill: none;
+  transition: stroke 0.3s;
+}
+.flow-line.active {
+  stroke: rgba(233,69,96,0.7);
+  animation: flowDash 0.8s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(233,69,96,0.8));
+}
+@keyframes flowDash {
+  to { stroke-dashoffset: -20; }
+}
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+.panel {
+  flex: 1;
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+#panel-supplier { border-right: 1px solid var(--border-color); }
+#panel-admin { border-left: 1px solid var(--border-color); }
+
+.panel-header {
+  background: linear-gradient(135deg, var(--navy-light) 0%, #1d2e50 100%);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: livePulse 2s ease-in-out infinite;
+}
+.panel-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* ============================================================
+   STAT CARDS (used in both panels)
+   ============================================================ */
+.stats-row {
+  display: flex;
+  gap: 8px;
+}
+.stat-card {
+  flex: 1;
+  background: var(--panel-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 10px 8px;
+  text-align: center;
+  transition: all 0.3s;
+}
+.stat-card.flash {
+  background: rgba(253,203,110,0.15);
+  border-color: var(--yellow);
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  transition: all 0.3s;
+}
+.stat-value.highlight { color: var(--yellow); transform: scale(1.15); }
+.stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.stat-sub {
+  font-size: 10px;
+  color: var(--green);
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   SUPPLIER PANEL CONTENT
+   ============================================================ */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.product-list { display: flex; flex-direction: column; gap: 6px; }
+.product-item {
+  background: var(--panel-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.25s;
+}
+.product-item:hover { border-color: rgba(255,255,255,0.2); background: #243560; }
+.product-icon { font-size: 22px; flex-shrink: 0; }
+.product-info { flex: 1; min-width: 0; }
+.product-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.product-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.product-right { text-align: right; flex-shrink: 0; }
+.product-price { font-size: 14px; font-weight: 800; color: var(--yellow); }
+.avail-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+.avail-ok { background: rgba(0,184,148,0.2); color: var(--green); border: 1px solid rgba(0,184,148,0.3); }
+.avail-low { background: rgba(253,203,110,0.2); color: var(--yellow); border: 1px solid rgba(253,203,110,0.3); }
+.avail-out { background: rgba(233,69,96,0.15); color: var(--red-accent); border: 1px solid rgba(233,69,96,0.3); }
+
+/* New Order Notification */
+#new-order-section { flex-shrink: 0; }
+#no-order-placeholder {
+  background: var(--panel-card);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+#new-order-notification {
+  display: none;
+  background: linear-gradient(135deg, #0d2e1a 0%, #0a2218 100%);
+  border: 1.5px solid var(--green);
+  border-radius: 12px;
+  padding: 12px;
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 20px rgba(0,184,148,0.2);
+}
+#new-order-notification.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+#new-order-notification.pulse {
+  animation: notifPulse 1.5s ease-in-out 3;
+}
+@keyframes notifPulse {
+  0%,100% { box-shadow: 0 0 20px rgba(0,184,148,0.2); }
+  50% { box-shadow: 0 0 30px rgba(0,184,148,0.6), 0 0 60px rgba(0,184,148,0.2); }
+}
+.notif-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.notif-icon { font-size: 18px; animation: bellShake 0.5s ease 3; }
+@keyframes bellShake {
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(15deg)}
+  75%{transform:rotate(-15deg)}
+}
+.notif-title { font-size: 13px; font-weight: 700; color: var(--green); }
+.notif-time { margin-left: auto; font-size: 10px; color: var(--text-muted); }
+.notif-body { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.notif-actions { display: flex; gap: 8px; margin-top: 10px; }
+.btn-accept, .btn-reject {
+  flex: 1; padding: 7px; border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  border: none; font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-accept { background: var(--green); color: #fff; }
+.btn-accept:hover { background: var(--green-dark); }
+.btn-reject { background: rgba(233,69,96,0.2); color: var(--red-accent); border: 1px solid rgba(233,69,96,0.3); }
+.btn-reject:hover { background: rgba(233,69,96,0.3); }
+.accepted-badge {
+  display: none;
+  background: rgba(0,184,148,0.15);
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   CENTER – PHONE MOCKUP
+   ============================================================ */
+#panel-center {
+  width: 400px;
+  flex-shrink: 0;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  position: relative;
+  z-index: 2;
+}
+
+#phone-frame {
+  width: 340px;
+  height: calc(100% - 10px);
+  max-height: 640px;
+  background: #1a1a2e;
+  border-radius: 40px;
+  border: 6px solid #2d2d44;
+  box-shadow:
+    0 0 0 1px #1a1a2e,
+    0 20px 60px rgba(0,0,0,0.8),
+    inset 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Phone notch */
+.phone-notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 110px; height: 26px;
+  background: #2d2d44;
+  border-radius: 0 0 16px 16px;
+  z-index: 10;
+}
+
+/* LINE Header */
+#line-header {
+  background: linear-gradient(135deg, #06c755, #04a844);
+  padding: 28px 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.line-avatar {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.line-header-info { flex: 1; min-width: 0; }
+.line-bot-name { font-size: 14px; font-weight: 700; color: #fff; }
+.line-bot-sub { font-size: 10px; color: rgba(255,255,255,0.7); }
+.line-header-icons { display: flex; gap: 12px; color: rgba(255,255,255,0.8); font-size: 16px; }
+
+/* Chat area */
+#chat-area {
+  flex: 1;
+  background: linear-gradient(180deg, #e8f5e9 0%, #f0f4f8 100%);
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+#chat-area::-webkit-scrollbar { width: 3px; }
+#chat-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+/* Date separator */
+.chat-date {
+  text-align: center;
+  font-size: 10px;
+  color: #999;
+  background: rgba(0,0,0,0.06);
+  display: inline-block;
+  margin: 0 auto;
+  padding: 2px 10px;
+  border-radius: 20px;
+  align-self: center;
+}
+
+/* Chat bubbles */
+.chat-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  animation: bubbleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.chat-row.user { flex-direction: row-reverse; }
+
+.chat-avatar-mini {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--line-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 8px 11px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+  word-break: break-word;
+}
+.bubble.bot {
+  background: #fff;
+  color: #222;
+  border-radius: 4px 16px 16px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.bubble.user {
+  background: linear-gradient(135deg, #06c755, #04a844);
+  color: #fff;
+  border-radius: 16px 4px 16px 16px;
+}
+.bubble.confirm {
+  background: linear-gradient(135deg, #00b894, #00a381);
+  color: #fff;
+}
+
+/* Typing indicator */
+#typing-indicator {
+  display: none;
+  align-items: flex-end;
+  gap: 6px;
+}
+.typing-bubble {
+  background: #fff;
+  border-radius: 4px 16px 16px 16px;
+  padding: 10px 14px;
+  display: flex; gap: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.typing-dot {
+  width: 6px; height: 6px;
+  background: #aaa;
+  border-radius: 50%;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%,60%,100% { transform: translateY(0); opacity:0.4; }
+  30% { transform: translateY(-6px); opacity:1; }
+}
+
+/* Flex Card (hotel card in chat) */
+.flex-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  max-width: 240px;
+  font-size: 12px;
+  color: #333;
+}
+.flex-card-img {
+  width: 100%;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  position: relative;
+}
+.flex-card-body { padding: 8px 10px; }
+.flex-card-name { font-size: 13px; font-weight: 700; color: #111; }
+.flex-card-sub { font-size: 11px; color: #777; margin-top: 2px; }
+.flex-card-price { font-size: 15px; font-weight: 800; color: #e94560; margin-top: 4px; }
+.flex-card-btn {
+  display: block;
+  margin: 6px 10px 8px;
+  background: var(--line-green);
+  color: #fff;
+  text-align: center;
+  padding: 7px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.flex-card-btn:hover { background: #04a844; }
+
+/* Order summary card */
+.order-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 240px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  font-size: 12px;
+  color: #333;
+}
+.order-card-header {
+  background: linear-gradient(135deg, #0f3460, #1a4a8a);
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.order-card-body { padding: 10px 12px; }
+.order-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.order-row .key { color: #888; }
+.order-row .val { font-weight: 600; color: #333; }
+.order-divider { border: none; border-top: 1px solid #eee; margin: 6px 0; }
+.order-total { font-size: 15px; font-weight: 800; color: #e94560; text-align: right; }
+.order-confirm-btn {
+  display: block;
+  margin: 0 12px 10px;
+  background: linear-gradient(135deg, #e94560, #c0392b);
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Confirmation bubble */
+.confirm-card {
+  background: linear-gradient(135deg, #00b894, #00a381);
+  border-radius: 12px;
+  padding: 10px 12px;
+  max-width: 240px;
+  color: #fff;
+  font-size: 12px;
+  box-shadow: 0 2px 12px rgba(0,184,148,0.4);
+}
+.confirm-card-title { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.confirm-card-row { display: flex; justify-content: space-between; margin-bottom: 3px; opacity: 0.9; }
+
+/* Rich menu */
+#rich-menu {
+  background: linear-gradient(135deg, #2c3e50, #1a252f);
+  padding: 8px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.rich-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.menu-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #ddd;
+}
+.menu-btn:hover { background: rgba(6,199,85,0.2); border-color: rgba(6,199,85,0.4); color: #06c755; }
+.menu-btn.active { background: rgba(6,199,85,0.25); border-color: #06c755; color: #06c755; }
+.menu-btn-icon { font-size: 18px; display: block; }
+.menu-btn-label { font-size: 10px; margin-top: 2px; display: block; }
+
+/* ============================================================
+   ADMIN PANEL
+   ============================================================ */
+.order-table-wrap { flex: 1; min-height: 0; }
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.order-table th {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.order-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.order-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.order-table tr.new-row td {
+  animation: rowSlideIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+@keyframes rowSlideIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.order-table tr.flash-yellow td {
+  animation: rowFlash 1.5s ease;
+}
+@keyframes rowFlash {
+  0%,100% { background: transparent; }
+  20%,60% { background: rgba(253,203,110,0.2); }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.status-pending { background: rgba(253,203,110,0.2); color: var(--yellow); border: 1px solid rgba(253,203,110,0.4); }
+.status-confirmed { background: rgba(0,184,148,0.2); color: var(--green); border: 1px solid rgba(0,184,148,0.4); }
+.status-processing { background: rgba(116,185,255,0.2); color: #74b9ff; border: 1px solid rgba(116,185,255,0.4); }
+
+.channel-badge {
+  display: inline-block;
+  background: rgba(6,199,85,0.15);
+  color: #06c755;
+  border: 1px solid rgba(6,199,85,0.3);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Revenue chart */
+.mini-chart {
+  background: var(--panel-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.mini-chart-title { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 50px;
+}
+.chart-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #e94560, rgba(233,69,96,0.3));
+  border-radius: 3px 3px 0 0;
+  transition: height 0.5s ease;
+  min-height: 4px;
+  position: relative;
+  cursor: pointer;
+}
+.chart-bar:hover { opacity: 0.8; }
+.chart-bar.highlight { background: linear-gradient(180deg, #fdcb6e, rgba(253,203,110,0.4)); }
+.chart-labels {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.chart-label {
+  flex: 1;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ============================================================
+   STEP PROGRESS BAR (bottom)
+   ============================================================ */
+#progress-bar {
+  height: 70px;
+  background: linear-gradient(135deg, #0a1628, #0f1e3a);
+  border-top: 1px solid rgba(233,69,96,0.2);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 20px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+#step-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 200px;
+  transition: all 0.3s;
+}
+#step-label.update {
+  animation: stepFlash 0.4s ease;
+}
+@keyframes stepFlash {
+  0%,100% { color: #fff; }
+  50% { color: var(--yellow); transform: scale(1.04); }
+}
+
+#step-dots {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+.step-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.step-dot.active {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  transform: scale(1.3);
+}
+.step-dot.done {
+  background: rgba(0,184,148,0.5);
+  border-color: rgba(0,184,148,0.6);
+}
+
+#step-counter {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 60px;
+  text-align: right;
+}
+
+#reset-btn {
+  display: none;
+  background: linear-gradient(135deg, var(--red-accent), #c0392b);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  animation: fadeInUp 0.5s ease;
+}
+#reset-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(233,69,96,0.5); }
+
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ============================================================
+   CONFETTI OVERLAY
+   ============================================================ */
+#confetti-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  animation: confettiFall 1.5s ease-in forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity:0; }
+}
+
+/* ============================================================
+   TOOLTIP / SCENARIO INFO
+   ============================================================ */
+#scenario-info {
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15,52,96,0.95);
+  border: 1px solid rgba(233,69,96,0.4);
+  border-radius: 8px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  z-index: 50;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#scenario-info.show { opacity: 1; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+  #flow-svg { display: none; }
+  #main-area { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+  #panel-center { width: 100%; height: 500px; }
+  .panel { min-height: 400px; }
+  #panel-supplier { border-right: none; border-bottom: 1px solid var(--border-color); }
+  #panel-admin { border-left: none; border-top: 1px solid var(--border-color); }
+}
+
+/* ============================================================
+   UTILITY ANIMATIONS
+   ============================================================ */
+.slide-in-down {
+  animation: slideInDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes slideInDown {
+  from { opacity:0; transform: translateY(-16px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeInAnim 0.4s ease forwards;
+}
+@keyframes fadeInAnim {
+  from { opacity:0; }
+  to { opacity:1; }
+}
+
+/* SVG data flow paths */
+.data-flow-path {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-dasharray: 8 5;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.data-flow-path.visible {
+  opacity: 1;
+  animation: pathFlow 1s linear infinite;
+}
+@keyframes pathFlow {
+  to { stroke-dashoffset: -26; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFETTI OVERLAY
+     ============================================================ -->
+<div id="confetti-overlay"></div>
+
+<!-- ============================================================
+     MAIN APP WRAPPER
+     ============================================================ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div id="logo">Travel<span>Pro</span> B2B</div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+
+    <div id="scenario-tabs">
+      <button class="tab-btn active" data-scenario="hotel" onclick="selectScenario('hotel', this)">🏨 宿</button>
+      <button class="tab-btn" data-scenario="food" onclick="selectScenario('food', this)">🍜 食</button>
+      <button class="tab-btn" data-scenario="tour" onclick="selectScenario('tour', this)">🗺️ 遊</button>
+      <button class="tab-btn" data-scenario="shop" onclick="selectScenario('shop', this)">🛍️ 購</button>
+      <button class="tab-btn" data-scenario="vehicle" onclick="selectScenario('vehicle', this)">🚌 行</button>
+      <button class="tab-btn" data-scenario="guide" onclick="selectScenario('guide', this)">🧑‍💼 人</button>
+    </div>
+
+    <div id="header-right">
+      <button id="play-btn" onclick="playCurrentScenario()">▶ 播放演示</button>
+      <div id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- MAIN AREA (3 panels) -->
+  <div id="main-area">
+
+    <!-- SVG Flow Lines -->
+    <svg id="flow-svg" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left flow: admin ← center -->
+      <path id="flow-left" class="data-flow-path" stroke="#e94560"/>
+      <!-- Right flow: supplier ← center -->
+      <path id="flow-right" class="data-flow-path" stroke="#00b894"/>
+    </svg>
+
+    <!-- ===================== LEFT PANEL: SUPPLIER ===================== -->
+    <div class="panel" id="panel-supplier">
+      <div class="panel-header">
+        <div class="panel-title">
+          🏨 <span id="supplier-name">晶英飯店</span> 供應商後台
+          <div class="status-dot"></div>
+        </div>
+        <div class="panel-subtitle">上游供應商管理介面</div>
+      </div>
+      <div class="panel-body">
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value" id="sup-orders">12</div>
+            <div class="stat-label">今日訂單</div>
+            <div class="stat-sub">↑ 3 今日</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="sup-rooms">47</div>
+            <div class="stat-label">可售房數</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">28.4<span style="font-size:13px">萬</span></div>
+            <div class="stat-label">本月營收</div>
+            <div class="stat-sub" style="color:var(--yellow)">↑ 12%</div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="section-title">商品管理</div>
+        <div class="product-list" id="product-list">
+          <div class="product-item">
+            <div class="product-icon">🛏️</div>
+            <div class="product-info">
+              <div class="product-name">豪華雙人房</div>
+              <div class="product-desc">42m² · 市景 · 含早餐</div>
+            </div>
+            <div class="product-right">
+              <div class="product-price">NT$5,800</div>
+              <div class="avail-badge avail-ok">充足 18間</div>
+            </div>
+          </div>
+          <div class="product-item">
+            <div class="product-icon">🏆</div>
+            <div class="product-info">
+              <div class="product-name">行政套房</div>
+              <div class="product-desc">68m² · 景觀陽台 · 含早晚餐</div>
+            </div>
+            <div class="product-right">
+              <div class="product-price">NT$9,800</div>
+              <div class="avail-badge avail-low">緊張 3間</div>
+            </div>
+          </div>
+          <div class="product-item">
+            <div class="product-icon">⭐</div>
+            <div class="product-info">
+              <div class="product-name">總統套房</div>
+              <div class="product-desc">120m² · 360°全景 · 專屬管家</div>
+            </div>
+            <div class="product-right">
+              <div class="product-price">NT$28,000</div>
+              <div class="avail-badge avail-out">售罄</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Order Notification -->
+        <div id="new-order-section">
+          <div class="section-title">🔔 新訂單通知</div>
+          <div id="no-order-placeholder">等待新訂單...</div>
+          <div id="new-order-notification">
+            <div class="notif-header">
+              <span class="notif-icon">🔔</span>
+              <span class="notif-title">新訂單通知</span>
+              <span class="notif-time" id="notif-time"></span>
+            </div>
+            <div class="notif-body" id="notif-body">
+              📋 訂單號：TP2024052501<br>
+              🛏️ 商品：豪華雙人房 × 2晚<br>
+              📅 入住：2024/05/25 – 05/27<br>
+              👤 旅客：2位成人<br>
+              💰 金額：NT$11,600
+            </div>
+            <div id="notif-action-area">
+              <div class="notif-actions">
+                <button class="btn-accept" onclick="acceptOrder()">✓ 接受</button>
+                <button class="btn-reject">✗ 拒絕</button>
+              </div>
+            </div>
+            <div class="accepted-badge" id="accepted-badge">✅ 已接受訂單</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================== CENTER: LINE PHONE ===================== -->
+    <div id="panel-center">
+      <div id="phone-frame">
+        <div class="phone-notch"></div>
+
+        <!-- LINE Header -->
+        <div id="line-header">
+          <div class="line-avatar">✈️</div>
+          <div class="line-header-info">
+            <div class="line-bot-name">TravelPro B2B</div>
+            <div class="line-bot-sub">旅遊B2B平台 · 官方帳號</div>
+          </div>
+          <div class="line-header-icons">☎ ⋮</div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-area">
+          <div class="chat-date">今天</div>
+          <!-- Initial messages injected by JS -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" style="padding: 0 10px 6px; display:none; align-items:flex-end; gap:6px;">
+          <div class="chat-avatar-mini" style="width:28px;height:28px;border-radius:50%;background:var(--line-green);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✈</div>
+          <div class="typing-bubble">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+
+        <!-- Rich Menu -->
+        <div id="rich-menu">
+          <div class="rich-menu-grid">
+            <div class="menu-btn" onclick="selectScenario('food', null)"><span class="menu-btn-icon">🍜</span><span class="menu-btn-label">食餐券</span></div>
+            <div class="menu-btn active" id="menu-hotel" onclick="selectScenario('hotel', null)"><span class="menu-btn-icon">🏨</span><span class="menu-btn-label">宿訂房</span></div>
+            <div class="menu-btn" onclick="selectScenario('tour', null)"><span class="menu-btn-icon">🗺️</span><span class="menu-btn-label">遊行程</span></div>
+            <div class="menu-btn" onclick="selectScenario('shop', null)"><span class="menu-btn-icon">🛍️</span><span class="menu-btn-label">購物品</span></div>
+            <div class="menu-btn" onclick="selectScenario('vehicle', null)"><span class="menu-btn-icon">🚌</span><span class="menu-btn-label">行包車</span></div>
+            <div class="menu-btn" onclick="selectScenario('guide', null)"><span class="menu-btn-icon">🧑‍💼</span><span class="menu-btn-label">人導遊</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================== RIGHT PANEL: ADMIN ===================== -->
+    <div class="panel" id="panel-admin">
+      <div class="panel-header">
+        <div class="panel-title">
+          📊 平台管理後台
+          <div class="status-dot"></div>
+        </div>
+        <div class="panel-subtitle">TravelPro 核心控制台</div>
+      </div>
+      <div class="panel-body">
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value" id="admin-orders">87</div>
+            <div class="stat-label">今日訂單數</div>
+            <div class="stat-sub">↑ 23%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="admin-pending">5</div>
+            <div class="stat-label">待處理</div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value">142<span style="font-size:13px">萬</span></div>
+            <div class="stat-label">本月營收</div>
+            <div class="stat-sub">↑ 18%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">238</div>
+            <div class="stat-label">合作供應商</div>
+            <div class="stat-sub">↑ 12 新增</div>
+          </div>
+        </div>
+
+        <!-- Mini chart -->
+        <div class="mini-chart">
+          <div class="mini-chart-title">本週訂單趨勢</div>
+          <div class="chart-bars">
+            <div class="chart-bar" style="height:55%"></div>
+            <div class="chart-bar" style="height:70%"></div>
+            <div class="chart-bar" style="height:48%"></div>
+            <div class="chart-bar" style="height:85%"></div>
+            <div class="chart-bar" style="height:60%"></div>
+            <div class="chart-bar" style="height:90%"></div>
+            <div class="chart-bar highlight" style="height:100%"></div>
+          </div>
+          <div class="chart-labels">
+            <div class="chart-label">一</div>
+            <div class="chart-label">二</div>
+            <div class="chart-label">三</div>
+            <div class="chart-label">四</div>
+            <div class="chart-label">五</div>
+            <div class="chart-label">六</div>
+            <div class="chart-label">日</div>
+          </div>
+        </div>
+
+        <!-- Orders table -->
+        <div class="section-title">即時訂單動態</div>
+        <div class="order-table-wrap">
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>訂單號</th>
+                <th>商品</th>
+                <th>通路</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr>
+                <td>TP...0087</td>
+                <td>九份半日遊</td>
+                <td><span class="channel-badge">LINE@</span></td>
+                <td><span class="status-badge status-confirmed">已確認</span></td>
+              </tr>
+              <tr>
+                <td>TP...0086</td>
+                <td>寒舍艾美早餐券</td>
+                <td><span class="channel-badge">LINE@</span></td>
+                <td><span class="status-badge status-confirmed">已確認</span></td>
+              </tr>
+              <tr>
+                <td>TP...0085</td>
+                <td>機場接送包車</td>
+                <td><span class="channel-badge">LINE@</span></td>
+                <td><span class="status-badge status-processing">處理中</span></td>
+              </tr>
+              <tr>
+                <td>TP...0084</td>
+                <td>晶英 Standard</td>
+                <td><span class="channel-badge">LINE@</span></td>
+                <td><span class="status-badge status-confirmed">已確認</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end #main-area -->
+
+  <!-- STEP PROGRESS BAR -->
+  <div id="progress-bar">
+    <div id="step-label">請選擇情境，點擊▶播放演示</div>
+    <div id="step-dots"></div>
+    <div id="step-counter"></div>
+    <button id="reset-btn" onclick="resetDemo()">↺ 重新播放</button>
+  </div>
+
+</div><!-- end #app -->
+
+<script>
+/* ============================================================
+   SCENARIO ENGINE
+   ============================================================ */
+
+let demoTimer = null;
+let currentScenario = 'hotel';
+let currentStep = 0;
+let totalSteps = 0;
+let allTimers = [];
+
+// Scenario configurations
+const scenarioConfig = {
+  hotel: {
+    name: '宿 — 飯店訂房',
+    supplierName: '晶英飯店',
+    supplierIcon: '🏨',
+    menuKey: 'menu-hotel',
+    supplierProducts: [
+      { icon: '🛏️', name: '豪華雙人房', desc: '42m² · 市景 · 含早餐', price: 'NT$5,800', avail: '充足 18間', cls: 'avail-ok' },
+      { icon: '🏆', name: '行政套房', desc: '68m² · 景觀陽台', price: 'NT$9,800', avail: '緊張 3間', cls: 'avail-low' },
+      { icon: '⭐', name: '總統套房', desc: '120m² · 全景', price: 'NT$28,000', avail: '售罄', cls: 'avail-out' },
+    ],
+    supplierStats: { orders: 12, rooms: 47, revenue: '28.4萬' },
+  },
+  food: {
+    name: '食 — 餐券訂購',
+    supplierName: '欣葉台灣料理',
+    supplierIcon: '🍜',
+    menuKey: 'menu-food',
+    supplierProducts: [
+      { icon: '🍱', name: '商務午餐券', desc: '2人份 · 含湯品', price: 'NT$980', avail: '充足 200張', cls: 'avail-ok' },
+      { icon: '🥘', name: '頂級晚宴券', desc: '4人份 · 含酒水', price: 'NT$3,200', avail: '緊張 15張', cls: 'avail-low' },
+      { icon: '🍣', name: '日式料理券', desc: '2人份 · 無菜單', price: 'NT$2,800', avail: '充足 50張', cls: 'avail-ok' },
+    ],
+    supplierStats: { orders: 34, rooms: 200, revenue: '18.6萬' },
+  },
+  tour: {
+    name: '遊 — 旅遊行程',
+    supplierName: '東南旅行社',
+    supplierIcon: '🗺️',
+    menuKey: 'menu-tour',
+    supplierProducts: [
+      { icon: '🏔️', name: '阿里山一日遊', desc: '含導遊 · 交通', price: 'NT$1,800', avail: '充足 40位', cls: 'avail-ok' },
+      { icon: '🚢', name: '澎湖三日遊', desc: '含海上活動', price: 'NT$8,800', avail: '緊張 8位', cls: 'avail-low' },
+      { icon: '🏝️', name: '綠島潛水遊', desc: '含裝備 · 教練', price: 'NT$4,200', avail: '充足 20位', cls: 'avail-ok' },
+    ],
+    supplierStats: { orders: 22, rooms: 40, revenue: '35.2萬' },
+  },
+  shop: {
+    name: '購 — 購物商品',
+    supplierName: '台灣特產館',
+    supplierIcon: '🛍️',
+    menuKey: 'menu-shop',
+    supplierProducts: [
+      { icon: '🍍', name: '鳳梨酥禮盒', desc: '12入 · 精裝版', price: 'NT$480', avail: '充足 500盒', cls: 'avail-ok' },
+      { icon: '🫖', name: '阿里山茶葉組', desc: '高山烏龍 150g', price: 'NT$1,200', avail: '緊張 30組', cls: 'avail-low' },
+      { icon: '🎁', name: '台灣美食禮盒', desc: '綜合伴手禮 10件', price: 'NT$2,800', avail: '充足 80盒', cls: 'avail-ok' },
+    ],
+    supplierStats: { orders: 56, rooms: 500, revenue: '22.8萬' },
+  },
+  vehicle: {
+    name: '行 — 包車服務',
+    supplierName: '台灣頂級包車',
+    supplierIcon: '🚌',
+    menuKey: 'menu-vehicle',
+    supplierProducts: [
+      { icon: '🚙', name: '機場接送 (轎車)', desc: '5座 · 桃機往返', price: 'NT$1,800', avail: '充足 12輛', cls: 'avail-ok' },
+      { icon: '🚐', name: '全日包車 (廂型)', desc: '8座 · 10小時', price: 'NT$6,500', avail: '緊張 3輛', cls: 'avail-low' },
+      { icon: '🚌', name: '豪華遊覽車', desc: '45座 · 含導遊', price: 'NT$18,000', avail: '充足 5輛', cls: 'avail-ok' },
+    ],
+    supplierStats: { orders: 18, rooms: 12, revenue: '15.4萬' },
+  },
+  guide: {
+    name: '人 — 導遊人力',
+    supplierName: '專業導遊媒合',
+    supplierIcon: '🧑‍💼',
+    menuKey: 'menu-guide',
+    supplierProducts: [
+      { icon: '🇯🇵', name: '日語導遊', desc: '全台 · 日/中雙語', price: 'NT$3,500/天', avail: '充足 8位', cls: 'avail-ok' },
+      { icon: '🇺🇸', name: '英語導遊', desc: '全台 · 英/中雙語', price: 'NT$3,200/天', avail: '緊張 2位', cls: 'avail-low' },
+      { icon: '🌟', name: '金牌認證導遊', desc: '15年 · 高端定制', price: 'NT$6,800/天', avail: '售罄', cls: 'avail-out' },
+    ],
+    supplierStats: { orders: 8, rooms: 8, revenue: '9.6萬' },
+  },
+};
+
+/* ============================================================
+   SCENARIO STEPS DEFINITIONS
+   ============================================================ */
+
+const scenarios = {
+  hotel: [
+    { at: 0,     label: '第1步：經銷商查詢',     fn: () => {
+      highlightTab('hotel');
+      highlightMenuBtn('menu-hotel');
+    }},
+    { at: 800,   label: '第1步：經銷商查詢',     fn: () => {
+      addUserBubble('🏨 住宿訂房');
+    }},
+    { at: 1600,  label: '第1步：經銷商查詢',     fn: () => { showTyping(); }},
+    { at: 2800,  label: '第2步：瀏覽飯店商品',   fn: () => {
+      hideTyping();
+      addBotBubble('為您查詢最新飯店房型，請稍候...');
+      setTimeout(() => addBotFlexCards(), 400);
+    }},
+    { at: 4000,  label: '第2步：選擇商品',       fn: () => {}},
+    { at: 4800,  label: '第2步：選擇商品',       fn: () => {
+      addUserBubble('🛏️ 晶英飯店 豪華雙人房 × 2晚\n📅 入住 5/25');
+    }},
+    { at: 5600,  label: '第2步：選擇商品',       fn: () => { showTyping(); }},
+    { at: 6800,  label: '第3步：確認訂單',       fn: () => {
+      hideTyping();
+      addBotOrderSummary();
+    }},
+    { at: 8000,  label: '第3步：確認下訂',       fn: () => {}},
+    { at: 8800,  label: '第3步：確認下訂',       fn: () => {
+      addUserBubble('✅ 確認下訂');
+    }},
+    { at: 9200,  label: '第3步：確認下訂',       fn: () => {
+      showTyping();
+    }},
+    { at: 9500,  label: '第4步：平台接收訂單',   fn: () => {
+      hideTyping();
+      addBotBubble('🔄 訂單建立中... 訂單號：TP2024052501');
+      adminAddNewOrder('TP...0088', '晶英 豪華雙人×2晚', '待確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024052501',
+        product: '豪華雙人房 × 2晚',
+        dates: '5/25 – 5/27',
+        guests: '2位成人',
+        amount: 'NT$11,600',
+      });
+    }},
+    { at: 12000, label: '第5步：供應商確認',     fn: () => {
+      supplierAccept();
+    }},
+    { at: 13000, label: '第5步：供應商確認',     fn: () => {
+      adminConfirmOrder();
+      hideFlowLines();
+    }},
+    { at: 14000, label: '第6步：完成通知',       fn: () => {}},
+    { at: 14500, label: '第6步：完成通知',       fn: () => {
+      addBotConfirmation({
+        orderNum: 'TP2024052501',
+        hotel: '晶英飯店',
+        room: '豪華雙人房 × 2晚',
+        dates: '5/25 – 5/27',
+        amount: 'NT$11,600',
+      });
+    }},
+    { at: 16000, label: '✅ 完成！',            fn: () => {
+      fireConfetti();
+    }},
+    { at: 17000, label: '✅ 完成！',            fn: () => {
+      showResetBtn();
+    }},
+  ],
+
+  food: [
+    { at: 0,    label: '第1步：查詢餐券',   fn: () => { highlightTab('food'); highlightMenuBtn('menu-food'); }},
+    { at: 800,  label: '第1步：查詢餐券',   fn: () => { addUserBubble('🍜 餐廳餐券查詢'); }},
+    { at: 1600, label: '第1步：查詢餐券',   fn: () => { showTyping(); }},
+    { at: 2800, label: '第2步：瀏覽菜單',   fn: () => {
+      hideTyping();
+      addBotBubble('為您推薦精選餐廳餐券：');
+      setTimeout(() => addBotGenericCards([
+        { icon: '🍱', name: '商務午餐券（2人）', price: 'NT$980', sub: '欣葉台灣料理' },
+        { icon: '🥘', name: '頂級晚宴券（4人）', price: 'NT$3,200', sub: '欣葉台灣料理' },
+      ]), 300);
+    }},
+    { at: 4000, label: '第3步：選擇餐券',   fn: () => { addUserBubble('商務午餐券 × 5張'); }},
+    { at: 5000, label: '第3步：選擇餐券',   fn: () => { showTyping(); }},
+    { at: 6000, label: '第4步：平台接收',   fn: () => {
+      hideTyping();
+      addBotBubble('✅ 餐券訂單建立！訂單號：TP2024052599\n💳 金額：NT$4,900\n📧 電子餐券將發送至您的 LINE');
+      adminAddNewOrder('TP...0099', '欣葉午餐券×5', '已確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024052599',
+        product: '商務午餐券 × 5張',
+        dates: '即日起有效',
+        guests: '—',
+        amount: 'NT$4,900',
+      });
+    }},
+    { at: 8000, label: '第5步：供應商出券', fn: () => { supplierAccept(); hideFlowLines(); adminConfirmOrder(); }},
+    { at: 9500, label: '第6步：完成通知',   fn: () => {
+      addBotConfirmation({ orderNum: 'TP2024052599', hotel: '欣葉台灣料理', room: '商務午餐券×5', dates: '即日起有效', amount: 'NT$4,900' });
+    }},
+    { at: 11000, label: '✅ 完成！',        fn: () => { fireConfetti(); showResetBtn(); }},
+  ],
+
+  tour: [
+    { at: 0,    label: '第1步：查詢行程',   fn: () => { highlightTab('tour'); highlightMenuBtn('menu-tour'); }},
+    { at: 800,  label: '第1步：查詢行程',   fn: () => { addUserBubble('🗺️ 查詢旅遊行程'); }},
+    { at: 1600, label: '第1步：查詢行程',   fn: () => { showTyping(); }},
+    { at: 2800, label: '第2步：選擇行程',   fn: () => {
+      hideTyping();
+      addBotBubble('精選台灣熱門行程：');
+      setTimeout(() => addBotGenericCards([
+        { icon: '🏔️', name: '阿里山一日遊', price: 'NT$1,800/人', sub: '含專業導遊、交通' },
+        { icon: '🚢', name: '澎湖三日遊', price: 'NT$8,800/人', sub: '含海上活動、住宿' },
+      ]), 300);
+    }},
+    { at: 4200, label: '第3步：確認預訂',   fn: () => { addUserBubble('阿里山一日遊 × 10人\n📅 出發：5/30'); }},
+    { at: 5200, label: '第3步：確認預訂',   fn: () => { showTyping(); }},
+    { at: 6400, label: '第4步：建立訂單',   fn: () => {
+      hideTyping();
+      addBotBubble('🎉 行程預訂成功！\n訂單：TP2024053001\n💰 NT$18,000（10人）\n🚌 車輛將於5/30 07:30集合');
+      adminAddNewOrder('TP...0201', '阿里山一日遊×10', '待確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024053001',
+        product: '阿里山一日遊 × 10人',
+        dates: '5/30 出發',
+        guests: '10人',
+        amount: 'NT$18,000',
+      });
+    }},
+    { at: 8500, label: '第5步：業者確認',   fn: () => { supplierAccept(); hideFlowLines(); adminConfirmOrder(); }},
+    { at: 10000, label: '✅ 完成！',        fn: () => {
+      addBotConfirmation({ orderNum: 'TP2024053001', hotel: '東南旅行社', room: '阿里山一日遊×10人', dates: '5/30', amount: 'NT$18,000' });
+      fireConfetti(); showResetBtn();
+    }},
+  ],
+
+  shop: [
+    { at: 0,    label: '第1步：瀏覽商品',   fn: () => { highlightTab('shop'); highlightMenuBtn('menu-shop'); }},
+    { at: 800,  label: '第1步：瀏覽商品',   fn: () => { addUserBubble('🛍️ 台灣伴手禮採購'); }},
+    { at: 1600, label: '第1步：瀏覽商品',   fn: () => { showTyping(); }},
+    { at: 2800, label: '第2步：選擇商品',   fn: () => {
+      hideTyping();
+      addBotBubble('精選台灣伴手禮推薦：');
+      setTimeout(() => addBotGenericCards([
+        { icon: '🍍', name: '鳳梨酥禮盒（12入）', price: 'NT$480/盒', sub: '台灣特產館' },
+        { icon: '🫖', name: '阿里山茶葉組', price: 'NT$1,200/組', sub: '高山烏龍 150g' },
+      ]), 300);
+    }},
+    { at: 4200, label: '第3步：下訂採購',   fn: () => { addUserBubble('鳳梨酥禮盒 × 20盒\n配送至飯店大廳'); }},
+    { at: 5000, label: '第3步：下訂採購',   fn: () => { showTyping(); }},
+    { at: 6200, label: '第4步：訂單處理',   fn: () => {
+      hideTyping();
+      addBotBubble('📦 採購訂單成立！\n訂單：TP2024052801\n💰 NT$9,600（20盒）\n🚚 預計2個工作天配送');
+      adminAddNewOrder('TP...0301', '鳳梨酥禮盒×20', '待確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024052801',
+        product: '鳳梨酥禮盒 × 20盒',
+        dates: '預計2天配送',
+        guests: '—',
+        amount: 'NT$9,600',
+      });
+    }},
+    { at: 8200, label: '第5步：廠商備貨',   fn: () => { supplierAccept(); hideFlowLines(); adminConfirmOrder(); }},
+    { at: 9800, label: '✅ 完成！',         fn: () => {
+      addBotConfirmation({ orderNum: 'TP2024052801', hotel: '台灣特產館', room: '鳳梨酥禮盒×20盒', dates: '2工作天配送', amount: 'NT$9,600' });
+      fireConfetti(); showResetBtn();
+    }},
+  ],
+
+  vehicle: [
+    { at: 0,    label: '第1步：查詢車輛',   fn: () => { highlightTab('vehicle'); highlightMenuBtn('menu-vehicle'); }},
+    { at: 800,  label: '第1步：查詢車輛',   fn: () => { addUserBubble('🚌 包車服務查詢'); }},
+    { at: 1600, label: '第1步：查詢車輛',   fn: () => { showTyping(); }},
+    { at: 2800, label: '第2步：選擇車型',   fn: () => {
+      hideTyping();
+      addBotBubble('為您配對合適車輛：');
+      setTimeout(() => addBotGenericCards([
+        { icon: '🚙', name: '機場接送（轎車）', price: 'NT$1,800/趟', sub: '5座 · 桃機往返' },
+        { icon: '🚐', name: '全日包車（廂型）', price: 'NT$6,500/天', sub: '8座 · 10小時彈性' },
+      ]), 300);
+    }},
+    { at: 4200, label: '第3步：預約包車',   fn: () => { addUserBubble('機場接送 × 3輛\n📅 5/28 14:00 桃機第二航廈'); }},
+    { at: 5200, label: '第3步：預約包車',   fn: () => { showTyping(); }},
+    { at: 6400, label: '第4步：媒合車輛',   fn: () => {
+      hideTyping();
+      addBotBubble('🚗 車輛媒合完成！\n訂單：TP2024052801V\n💰 NT$5,400（3輛）\n📱 司機聯絡資訊已發送');
+      adminAddNewOrder('TP...V401', '機場接送×3輛', '待確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024052801V',
+        product: '機場接送 × 3輛',
+        dates: '5/28 14:00',
+        guests: '桃機T2',
+        amount: 'NT$5,400',
+      });
+    }},
+    { at: 8400, label: '第5步：司機確認',   fn: () => { supplierAccept(); hideFlowLines(); adminConfirmOrder(); }},
+    { at: 10000, label: '✅ 完成！',        fn: () => {
+      addBotConfirmation({ orderNum: 'TP2024052801V', hotel: '台灣頂級包車', room: '機場接送×3輛', dates: '5/28 14:00', amount: 'NT$5,400' });
+      fireConfetti(); showResetBtn();
+    }},
+  ],
+
+  guide: [
+    { at: 0,    label: '第1步：查詢導遊',   fn: () => { highlightTab('guide'); highlightMenuBtn('menu-guide'); }},
+    { at: 800,  label: '第1步：查詢導遊',   fn: () => { addUserBubble('🧑‍💼 導遊人力需求'); }},
+    { at: 1600, label: '第1步：查詢導遊',   fn: () => { showTyping(); }},
+    { at: 2800, label: '第2步：選擇導遊',   fn: () => {
+      hideTyping();
+      addBotBubble('以下是可預約的專業導遊：');
+      setTimeout(() => addBotGenericCards([
+        { icon: '🇯🇵', name: '日語導遊（資深）', price: 'NT$3,500/天', sub: '日/中雙語 · 全台路線' },
+        { icon: '🇺🇸', name: '英語導遊', price: 'NT$3,200/天', sub: '英/中雙語 · 北部路線' },
+      ]), 300);
+    }},
+    { at: 4200, label: '第3步：預約導遊',   fn: () => { addUserBubble('日語導遊 × 1位\n📅 5/26 – 5/28（3天）'); }},
+    { at: 5200, label: '第3步：預約導遊',   fn: () => { showTyping(); }},
+    { at: 6400, label: '第4步：平台媒合',   fn: () => {
+      hideTyping();
+      addBotBubble('🎉 導遊預約成功！\n訂單：TP2024052601G\n💰 NT$10,500（3天）\n📞 導遊將提前一天與您聯繫');
+      adminAddNewOrder('TP...G501', '日語導遊×3天', '待確認');
+      showFlowLines();
+      supplierShowNotification({
+        orderNum: 'TP2024052601G',
+        product: '日語導遊 × 3天',
+        dates: '5/26 – 5/28',
+        guests: '1位導遊',
+        amount: 'NT$10,500',
+      });
+    }},
+    { at: 8400, label: '第5步：導遊接單',   fn: () => { supplierAccept(); hideFlowLines(); adminConfirmOrder(); }},
+    { at: 10000, label: '✅ 完成！',        fn: () => {
+      addBotConfirmation({ orderNum: 'TP2024052601G', hotel: '專業導遊媒合', room: '日語導遊×3天', dates: '5/26–5/28', amount: 'NT$10,500' });
+      fireConfetti(); showResetBtn();
+    }},
+  ],
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let isPlaying = false;
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ============================================================
+   SCENARIO SELECTION
+   ============================================================ */
+function selectScenario(key, tabEl) {
+  if (isPlaying) return;
+  currentScenario = key;
+
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (tabEl) {
+    tabEl.classList.add('active');
+  } else {
+    const found = document.querySelector(`.tab-btn[data-scenario="${key}"]`);
+    if (found) found.classList.add('active');
+  }
+
+  // Update rich menu
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+
+  // Update supplier panel to match scenario
+  updateSupplierPanel(key);
+
+  // Reset demo state without full reset
+  softReset();
+}
+
+function updateSupplierPanel(key) {
+  const cfg = scenarioConfig[key];
+  if (!cfg) return;
+  document.getElementById('supplier-name').textContent = cfg.supplierName;
+
+  // Update products
+  const pl = document.getElementById('product-list');
+  pl.innerHTML = cfg.supplierProducts.map(p => `
+    <div class="product-item">
+      <div class="product-icon">${p.icon}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc}</div>
+      </div>
+      <div class="product-right">
+        <div class="product-price">${p.price}</div>
+        <div class="avail-badge ${p.cls}">${p.avail}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Stats
+  document.getElementById('sup-orders').textContent = cfg.supplierStats.orders;
+  document.getElementById('sup-rooms').textContent = cfg.supplierStats.rooms;
+}
+
+/* ============================================================
+   PLAY / RESET
+   ============================================================ */
+function playCurrentScenario() {
+  if (isPlaying) return;
+  playDemo(currentScenario);
+}
+
+function playDemo(scenarioKey) {
+  resetDemo(false);
+  isPlaying = true;
+  currentScenario = scenarioKey;
+
+  const steps = scenarios[scenarioKey];
+  if (!steps || steps.length === 0) return;
+
+  totalSteps = steps.length;
+  currentStep = 0;
+  renderStepDots(totalSteps);
+  updateStepCounter(0, totalSteps);
+
+  document.getElementById('reset-btn').style.display = 'none';
+  document.getElementById('play-btn').disabled = true;
+  document.getElementById('play-btn').textContent = '▶ 播放中...';
+
+  // Highlight active tab
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.scenario === scenarioKey);
+  });
+
+  steps.forEach((step, i) => {
+    const t = setTimeout(() => {
+      currentStep = i + 1;
+      updateStepLabel(step.label);
+      activateStepDot(i);
+      updateStepCounter(i + 1, totalSteps);
+      step.fn();
+    }, step.at);
+    allTimers.push(t);
+  });
+}
+
+function resetDemo(full = true) {
+  // Clear all timers
+  allTimers.forEach(t => clearTimeout(t));
+  allTimers = [];
+  isPlaying = false;
+
+  document.getElementById('play-btn').disabled = false;
+  document.getElementById('play-btn').textContent = '▶ 播放演示';
+  document.getElementById('reset-btn').style.display = 'none';
+
+  // Reset chat
+  resetChat();
+
+  // Reset supplier notification
+  const notif = document.getElementById('new-order-notification');
+  notif.style.display = 'none';
+  notif.classList.remove('visible','pulse');
+  document.getElementById('no-order-placeholder').style.display = 'block';
+  document.getElementById('notif-action-area').style.display = 'block';
+  document.getElementById('accepted-badge').style.display = 'none';
+
+  // Reset admin table
+  resetAdminTable();
+
+  // Reset flow lines
+  hideFlowLines();
+
+  // Reset step bar
+  document.getElementById('step-label').textContent = '請選擇情境，點擊▶播放演示';
+  document.getElementById('step-dots').innerHTML = '';
+  document.getElementById('step-counter').textContent = '';
+
+  // Reset rich menu highlights
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+
+  // Update supplier panel
+  if (full) {
+    updateSupplierPanel(currentScenario);
+  }
+}
+
+function softReset() {
+  resetDemo(true);
+}
+
+/* ============================================================
+   STEP PROGRESS BAR
+   ============================================================ */
+function renderStepDots(count) {
+  const container = document.getElementById('step-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot';
+    dot.id = `dot-${i}`;
+    container.appendChild(dot);
+  }
+}
+
+function activateStepDot(idx) {
+  for (let i = 0; i < idx; i++) {
+    const d = document.getElementById(`dot-${i}`);
+    if (d) { d.classList.remove('active'); d.classList.add('done'); }
+  }
+  const current = document.getElementById(`dot-${idx}`);
+  if (current) current.classList.add('active');
+}
+
+function updateStepLabel(text) {
+  const el = document.getElementById('step-label');
+  el.textContent = text;
+  el.classList.remove('update');
+  void el.offsetWidth;
+  el.classList.add('update');
+}
+
+function updateStepCounter(curr, total) {
+  document.getElementById('step-counter').textContent = `第 ${curr} / ${total} 步`;
+}
+
+function showResetBtn() {
+  const btn = document.getElementById('reset-btn');
+  btn.style.display = 'inline-block';
+  // Mark all dots done
+  document.querySelectorAll('.step-dot').forEach(d => {
+    d.classList.remove('active');
+    d.classList.add('done');
+  });
+  document.getElementById('play-btn').disabled = false;
+  document.getElementById('play-btn').textContent = '▶ 播放演示';
+  isPlaying = false;
+}
+
+/* ============================================================
+   CHAT FUNCTIONS
+   ============================================================ */
+function resetChat() {
+  const area = document.getElementById('chat-area');
+  area.innerHTML = `<div class="chat-date">今天</div>`;
+  hideTyping();
+
+  // Add initial greeting
+  setTimeout(() => {
+    addBotBubble('您好！歡迎使用 TravelPro B2B 平台 👋');
+    setTimeout(() => {
+      addBotBubble('請點選下方選單或輸入需求，為您即時查詢最優惠的旅遊方案。');
+    }, 600);
+  }, 100);
+}
+
+function addUserBubble(text) {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row user';
+  row.innerHTML = `
+    <div class="bubble user">${text.replace(/\n/g,'<br>')}</div>
+  `;
+  area.appendChild(row);
+  scrollChat();
+}
+
+function addBotBubble(text) {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+  row.innerHTML = `
+    <div class="chat-avatar-mini">✈</div>
+    <div class="bubble bot">${text.replace(/\n/g,'<br>')}</div>
+  `;
+  area.appendChild(row);
+  scrollChat();
+}
+
+function addBotFlexCards() {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+
+  const cards = [
+    { icon: '🛏️', bg: 'linear-gradient(135deg,#1a3a5c,#2a5298)', name: '晶英飯店 豪華雙人房', sub: '42m² · 市景 · 含早餐', price: 'NT$5,800/晚' },
+    { icon: '🏆', bg: 'linear-gradient(135deg,#2c1810,#6b3a2a)', name: '晶英飯店 行政套房', sub: '68m² · 景觀陽台 · 含早晚餐', price: 'NT$9,800/晚' },
+  ];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;max-width:260px;';
+  wrap.innerHTML = `<div class="chat-avatar-mini" style="display:none">✈</div>`;
+
+  cards.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'flex-card';
+    card.innerHTML = `
+      <div class="flex-card-img" style="background:${c.bg}">${c.icon}</div>
+      <div class="flex-card-body">
+        <div class="flex-card-name">${c.name}</div>
+        <div class="flex-card-sub">${c.sub}</div>
+        <div class="flex-card-price">${c.price}</div>
+      </div>
+      <div class="flex-card-btn">立即預訂</div>
+    `;
+    wrap.appendChild(card);
+  });
+
+  row.innerHTML = `<div class="chat-avatar-mini">✈</div>`;
+  row.appendChild(wrap);
+  area.appendChild(row);
+  scrollChat();
+}
+
+function addBotGenericCards(cards) {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+
+  const gradients = [
+    'linear-gradient(135deg,#1a3a5c,#2a5298)',
+    'linear-gradient(135deg,#1a3d1a,#2d7a2d)',
+    'linear-gradient(135deg,#3d1a3a,#7a2d6b)',
+    'linear-gradient(135deg,#3d2d1a,#8a6030)',
+  ];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;max-width:260px;';
+
+  cards.forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = 'flex-card';
+    card.innerHTML = `
+      <div class="flex-card-img" style="background:${gradients[idx % gradients.length]}">${c.icon}</div>
+      <div class="flex-card-body">
+        <div class="flex-card-name">${c.name}</div>
+        <div class="flex-card-sub">${c.sub}</div>
+        <div class="flex-card-price">${c.price}</div>
+      </div>
+      <div class="flex-card-btn">立即預訂</div>
+    `;
+    wrap.appendChild(card);
+  });
+
+  row.innerHTML = `<div class="chat-avatar-mini">✈</div>`;
+  row.appendChild(wrap);
+  area.appendChild(row);
+  scrollChat();
+}
+
+function addBotOrderSummary() {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+
+  const card = document.createElement('div');
+  card.className = 'order-card';
+  card.innerHTML = `
+    <div class="order-card-header">📋 訂單確認明細</div>
+    <div class="order-card-body">
+      <div class="order-row"><span class="key">飯店</span><span class="val">晶英飯店</span></div>
+      <div class="order-row"><span class="key">房型</span><span class="val">豪華雙人房</span></div>
+      <div class="order-row"><span class="key">入住</span><span class="val">5/25 – 5/27</span></div>
+      <div class="order-row"><span class="key">天數</span><span class="val">2晚</span></div>
+      <div class="order-row"><span class="key">房價</span><span class="val">NT$5,800 × 2</span></div>
+      <hr class="order-divider">
+      <div class="order-total">合計：NT$11,600</div>
+    </div>
+    <div class="order-confirm-btn">✅ 確認下訂</div>
+  `;
+
+  row.innerHTML = `<div class="chat-avatar-mini">✈</div>`;
+  row.appendChild(card);
+  area.appendChild(row);
+  scrollChat();
+}
+
+function addBotConfirmation(info) {
+  const area = document.getElementById('chat-area');
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+
+  const card = document.createElement('div');
+  card.className = 'confirm-card';
+  card.innerHTML = `
+    <div class="confirm-card-title">✅ 訂房確認通知</div>
+    <div class="confirm-card-row"><span>訂單號</span><span>${info.orderNum}</span></div>
+    <div class="confirm-card-row"><span>供應商</span><span>${info.hotel}</span></div>
+    <div class="confirm-card-row"><span>商品</span><span>${info.room}</span></div>
+    <div class="confirm-card-row"><span>日期</span><span>${info.dates}</span></div>
+    <div class="confirm-card-row"><span>金額</span><span>${info.amount}</span></div>
+    <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.2);font-size:11px;opacity:0.85;">
+      🎉 感謝訂購！如需修改請聯繫客服。
+    </div>
+  `;
+
+  row.innerHTML = `<div class="chat-avatar-mini">✈</div>`;
+  row.appendChild(card);
+  area.appendChild(row);
+  scrollChat();
+}
+
+function showTyping() {
+  const indicator = document.getElementById('typing-indicator');
+  indicator.style.display = 'flex';
+  scrollChat();
+}
+
+function hideTyping() {
+  document.getElementById('typing-indicator').style.display = 'none';
+}
+
+function scrollChat() {
+  const area = document.getElementById('chat-area');
+  area.scrollTop = area.scrollHeight;
+}
+
+/* ============================================================
+   SUPPLIER PANEL FUNCTIONS
+   ============================================================ */
+function supplierShowNotification(info) {
+  document.getElementById('no-order-placeholder').style.display = 'none';
+
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('notif-time').textContent = timeStr;
+
+  const cfg = scenarioConfig[currentScenario];
+  document.getElementById('notif-body').innerHTML = `
+    📋 訂單號：${info.orderNum}<br>
+    ${cfg ? cfg.supplierIcon : '📦'} 商品：${info.product}<br>
+    📅 日期：${info.dates}<br>
+    👤 數量：${info.guests}<br>
+    💰 金額：${info.amount}
+  `;
+
+  const notif = document.getElementById('new-order-notification');
+  notif.style.display = 'block';
+  void notif.offsetWidth;
+  notif.classList.add('visible');
+  setTimeout(() => notif.classList.add('pulse'), 100);
+
+  // Increment supplier orders
+  const el = document.getElementById('sup-orders');
+  const val = parseInt(el.textContent) + 1;
+  el.textContent = val;
+  el.classList.add('highlight');
+  setTimeout(() => el.classList.remove('highlight'), 1000);
+}
+
+function supplierAccept() {
+  document.getElementById('notif-action-area').style.display = 'none';
+  document.getElementById('accepted-badge').style.display = 'block';
+  document.getElementById('new-order-notification').style.boxShadow = '0 0 20px rgba(0,184,148,0.6)';
+}
+
+function acceptOrder() {
+  supplierAccept();
+}
+
+/* ============================================================
+   ADMIN PANEL FUNCTIONS
+   ============================================================ */
+const defaultOrders = [
+  { num: 'TP...0087', product: '九份半日遊', status: 'confirmed', statusText: '已確認' },
+  { num: 'TP...0086', product: '寒舍艾美早餐券', status: 'confirmed', statusText: '已確認' },
+  { num: 'TP...0085', product: '機場接送包車', status: 'processing', statusText: '處理中' },
+  { num: 'TP...0084', product: '晶英 Standard', status: 'confirmed', statusText: '已確認' },
+];
+
+function resetAdminTable() {
+  const tbody = document.getElementById('orders-tbody');
+  tbody.innerHTML = defaultOrders.map(o => `
+    <tr>
+      <td>${o.num}</td>
+      <td>${o.product}</td>
+      <td><span class="channel-badge">LINE@</span></td>
+      <td><span class="status-badge status-${o.status}">${o.statusText}</span></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('admin-orders').textContent = '87';
+  document.getElementById('admin-pending').textContent = '5';
+}
+
+function adminAddNewOrder(num, product, statusText) {
+  const tbody = document.getElementById('orders-tbody');
+
+  // Increment counters
+  const ordersEl = document.getElementById('admin-orders');
+  const pendingEl = document.getElementById('admin-pending');
+  const newOrders = parseInt(ordersEl.textContent) + 1;
+  const newPending = parseInt(pendingEl.textContent) + 1;
+
+  ordersEl.textContent = newOrders;
+  ordersEl.classList.add('highlight');
+  pendingEl.textContent = newPending;
+  pendingEl.classList.add('highlight');
+
+  setTimeout(() => {
+    ordersEl.classList.remove('highlight');
+    pendingEl.classList.remove('highlight');
+  }, 1500);
+
+  // Stat card flash
+  ordersEl.closest('.stat-card').classList.add('flash');
+  pendingEl.closest('.stat-card').classList.add('flash');
+  setTimeout(() => {
+    ordersEl.closest('.stat-card').classList.remove('flash');
+    pendingEl.closest('.stat-card').classList.remove('flash');
+  }, 1500);
+
+  // Insert new row at top
+  const tr = document.createElement('tr');
+  tr.className = 'new-row';
+  tr.id = 'new-admin-row';
+  tr.innerHTML = `
+    <td>${num}</td>
+    <td>${product}</td>
+    <td><span class="channel-badge">LINE@</span></td>
+    <td id="new-order-status"><span class="status-badge status-pending">待確認</span></td>
+  `;
+
+  if (tbody.firstChild) {
+    tbody.insertBefore(tr, tbody.firstChild);
+  } else {
+    tbody.appendChild(tr);
+  }
+
+  // Flash yellow
+  setTimeout(() => {
+    tr.classList.add('flash-yellow');
+  }, 200);
+
+  // Remove extra rows
+  while (tbody.children.length > 5) {
+    tbody.removeChild(tbody.lastChild);
+  }
+}
+
+function adminConfirmOrder() {
+  const statusEl = document.getElementById('new-order-status');
+  if (statusEl) {
+    statusEl.innerHTML = '<span class="status-badge status-confirmed">已確認</span>';
+    statusEl.style.animation = 'none';
+    void statusEl.offsetWidth;
+    statusEl.style.animation = 'fadeInAnim 0.5s ease';
+  }
+
+  // Decrement pending
+  const pendingEl = document.getElementById('admin-pending');
+  const v = Math.max(0, parseInt(pendingEl.textContent) - 1);
+  pendingEl.textContent = v;
+}
+
+/* ============================================================
+   SVG FLOW LINES
+   ============================================================ */
+function updateFlowLines() {
+  const svg = document.getElementById('flow-svg');
+  const rect = svg.getBoundingClientRect();
+  if (rect.width === 0) return;
+
+  const centerPanel = document.getElementById('panel-center');
+  const supplierPanel = document.getElementById('panel-supplier');
+  const adminPanel = document.getElementById('panel-admin');
+
+  const centerRect = centerPanel.getBoundingClientRect();
+  const supplierRect = supplierPanel.getBoundingClientRect();
+  const adminRect = adminPanel.getBoundingClientRect();
+
+  const svgLeft = rect.left;
+  const svgTop = rect.top;
+
+  // Left flow: center phone → supplier
+  const cx1 = centerRect.left - svgLeft;
+  const cy1 = centerRect.top + centerRect.height * 0.5 - svgTop;
+  const sx = supplierRect.right - svgLeft;
+  const sy = supplierRect.top + supplierRect.height * 0.5 - svgTop;
+
+  const leftPath = document.getElementById('flow-left');
+  leftPath.setAttribute('d', `M ${cx1} ${cy1} C ${cx1 - 60} ${cy1}, ${sx + 60} ${sy}, ${sx} ${sy}`);
+
+  // Right flow: center phone → admin
+  const cx2 = centerRect.right - svgLeft;
+  const cy2 = centerRect.top + centerRect.height * 0.5 - svgTop;
+  const ax = adminRect.left - svgLeft;
+  const ay = adminRect.top + adminRect.height * 0.5 - svgTop;
+
+  const rightPath = document.getElementById('flow-right');
+  rightPath.setAttribute('d', `M ${cx2} ${cy2} C ${cx2 + 60} ${cy2}, ${ax - 60} ${ay}, ${ax} ${ay}`);
+}
+
+function showFlowLines() {
+  updateFlowLines();
+  document.getElementById('flow-left').classList.add('visible');
+  document.getElementById('flow-right').classList.add('visible');
+}
+
+function hideFlowLines() {
+  document.getElementById('flow-left').classList.remove('visible');
+  document.getElementById('flow-right').classList.remove('visible');
+}
+
+window.addEventListener('resize', updateFlowLines);
+
+/* ============================================================
+   TAB / MENU HIGHLIGHT
+   ============================================================ */
+function highlightTab(key) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.scenario === key);
+  });
+}
+
+function highlightMenuBtn(id) {
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function fireConfetti() {
+  const overlay = document.getElementById('confetti-overlay');
+  overlay.style.display = 'block';
+  overlay.innerHTML = '';
+
+  const colors = ['#e94560', '#00b894', '#fdcb6e', '#74b9ff', '#a29bfe', '#fd79a8', '#55efc4'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left: ${Math.random() * 100}%;
+      top: -10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      width: ${4 + Math.random() * 8}px;
+      height: ${4 + Math.random() * 8}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      animation-duration: ${1 + Math.random() * 1.5}s;
+      animation-delay: ${Math.random() * 0.5}s;
+    `;
+    overlay.appendChild(piece);
+  }
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    overlay.innerHTML = '';
+  }, 2500);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  updateSupplierPanel('hotel');
+  resetChat();
+  resetAdminTable();
+  updateFlowLines();
+
+  // Auto-update flow line positions on load
+  setTimeout(updateFlowLines, 200);
+});
+
+// Also update on window resize
+window.addEventListener('resize', () => {
+  updateFlowLines();
+});
+</script>
+</body>
+</html>
