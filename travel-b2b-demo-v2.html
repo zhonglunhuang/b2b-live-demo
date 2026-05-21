@@ -1130,12 +1130,12 @@ html, body {
         <!-- Rich Menu -->
         <div id="rich-menu">
           <div class="rich-menu-grid">
-            <div class="menu-btn" onclick="selectScenario('food', null)"><span class="menu-btn-icon">🍜</span><span class="menu-btn-label">食餐券</span></div>
-            <div class="menu-btn active" id="menu-hotel" onclick="selectScenario('hotel', null)"><span class="menu-btn-icon">🏨</span><span class="menu-btn-label">宿訂房</span></div>
-            <div class="menu-btn" onclick="selectScenario('tour', null)"><span class="menu-btn-icon">🗺️</span><span class="menu-btn-label">遊行程</span></div>
-            <div class="menu-btn" onclick="selectScenario('shop', null)"><span class="menu-btn-icon">🛍️</span><span class="menu-btn-label">購物品</span></div>
-            <div class="menu-btn" onclick="selectScenario('vehicle', null)"><span class="menu-btn-icon">🚌</span><span class="menu-btn-label">行包車</span></div>
-            <div class="menu-btn" onclick="selectScenario('guide', null)"><span class="menu-btn-icon">🧑‍💼</span><span class="menu-btn-label">人導遊</span></div>
+            <div class="menu-btn" id="menu-food"    onclick="selectScenario('food', null)"><span class="menu-btn-icon">🍜</span><span class="menu-btn-label">食餐券</span></div>
+            <div class="menu-btn" id="menu-hotel"   onclick="selectScenario('hotel', null)"><span class="menu-btn-icon">🏨</span><span class="menu-btn-label">宿訂房</span></div>
+            <div class="menu-btn" id="menu-tour"    onclick="selectScenario('tour', null)"><span class="menu-btn-icon">🗺️</span><span class="menu-btn-label">遊行程</span></div>
+            <div class="menu-btn" id="menu-shop"    onclick="selectScenario('shop', null)"><span class="menu-btn-icon">🛍️</span><span class="menu-btn-label">購物品</span></div>
+            <div class="menu-btn" id="menu-vehicle" onclick="selectScenario('vehicle', null)"><span class="menu-btn-icon">🚌</span><span class="menu-btn-label">行包車</span></div>
+            <div class="menu-btn" id="menu-guide"   onclick="selectScenario('guide', null)"><span class="menu-btn-icon">🧑‍💼</span><span class="menu-btn-label">人導遊</span></div>
           </div>
         </div>
 
@@ -1610,7 +1610,6 @@ updateClock();
    SCENARIO SELECTION
    ============================================================ */
 function selectScenario(key, tabEl) {
-  if (isPlaying) return;
   currentScenario = key;
 
   // Update tab buttons
@@ -1622,14 +1621,16 @@ function selectScenario(key, tabEl) {
     if (found) found.classList.add('active');
   }
 
-  // Update rich menu
+  // Update rich menu highlight
   document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+  const menuEl = document.getElementById('menu-' + key);
+  if (menuEl) menuEl.classList.add('active');
 
   // Update supplier panel to match scenario
   updateSupplierPanel(key);
 
-  // Reset demo state without full reset
-  softReset();
+  // Auto-play immediately
+  playDemo(key);
 }
 
 function updateSupplierPanel(key) {
